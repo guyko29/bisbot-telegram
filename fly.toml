@@ -1,0 +1,16 @@
+# Fly.io config for BisBot. The bot uses long polling, so there is no HTTP
+# service: one always-on machine with a small volume for the SQLite file.
+app = "bisbot-CHANGE-ME"
+primary_region = "fra"
+
+[env]
+  TZ = "Asia/Jerusalem"
+  DB_PATH = "/data/bisbot.db"
+
+[mounts]
+  source = "bisbot_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

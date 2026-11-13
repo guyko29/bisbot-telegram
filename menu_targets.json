@@ -1,0 +1,20 @@
+{
+  "placeholder": true,
+  "categories": [
+    {"key": "carbs", "name": "פחמימות", "unit": "מנות", "unit_singular": "מנה", "daily_target": 6},
+    {"key": "protein", "name": "חלבון", "unit": "מנות", "unit_singular": "מנה", "daily_target": 5},
+    {"key": "fat", "name": "שומן", "unit": "מנות", "unit_singular": "מנה", "daily_target": 3},
+    {"key": "fruit", "name": "פירות", "unit": "מנות", "unit_singular": "מנה", "daily_target": 2},
+    {"key": "vegetables", "name": "ירקות", "unit": "מנות", "unit_singular": "מנה", "daily_target": null},
+    {"key": "extras", "name": "חריגות", "unit": "מנות", "unit_singular": "מנה", "daily_target": null}
+  ],
+  "meal_types": [
+    {"key": "breakfast", "name": "ארוחת בוקר"},
+    {"key": "snack", "name": "ארוחת ביניים"},
+    {"key": "lunch", "name": "ארוחת צהריים"},
+    {"key": "dinner", "name": "ארוחת ערב"},
+    {"key": "pre_workout", "name": "לפני אימון"},
+    {"key": "post_workout", "name": "אחרי אימון"},
+    {"key": "other", "name": "אחר"}
+  ]
+}
