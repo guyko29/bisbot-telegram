@@ -160,7 +160,7 @@ async def test_question_gets_an_answer_and_today_context(bot, claude, db):
     assert db.get_pending(bot.handlers.settings.allowed_chat_id) == {}
     context = claude.handle_message.await_args.kwargs["context"]
     assert "Current local time: 2026-11-13 14:30 (Friday)" in context
-    assert "- carbs (פחמימות): eaten 2 of 6, remaining 4" in context
+    assert "- carbs (פחמימות): eaten 2, target 6, still needs 4" in context
     assert "- vegetables (ירקות): eaten 0, no daily target" in context
     assert "- 08:30 breakfast: 2 פרוסות לחם (carbs 2), ביצה (protein 1)" in context
 
@@ -349,7 +349,7 @@ async def test_week_combines_computed_numbers_with_claudes_note(bot, claude, db)
     reply = bot.request.texts()[-1]
     assert "סיכום שבועי · 6.11 עד 12.11" in reply
     assert "ימים עם תיעוד: 7 מתוך 7" in reply
-    assert "חלבון: ממוצע 4 מתוך 5 מנות ליום · עמידה ביעד 80%" in reply
+    assert "חלבון: ממוצע 4 ליום (יעד 5) · עמידה ביעד 80%" in reply
     assert reply.endswith("תובנות שבועיות מ-Claude")
 
     payload = claude.phrase_weekly.await_args.args[0]
@@ -387,7 +387,7 @@ async def test_daily_report_uses_claude_only_for_the_note(bot, claude, db):
     assert "פחמימות: 2 מתוך 6 מנות · נשארו 4" in report
     assert report.endswith("הערה יומית מ-Claude")
     payload = claude.phrase_daily.await_args.args[0]
-    assert payload["categories"][0]["remaining"] == 4
+    assert payload["categories"][0]["still_needed_to_reach_min"] == 4
     assert payload["meals"][0]["items"][0]["name"] == "2 פרוסות לחם"
 
     claude.phrase_daily.side_effect = ClaudeError("api")

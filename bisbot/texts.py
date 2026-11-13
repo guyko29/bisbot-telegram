@@ -69,6 +69,11 @@ SHORTCUT_INVALID = (
     "כדאי למחוק אותו עם /delshortcut ולשמור מחדש."
 )
 
+EXTRA_MEAL_NOTE = "💪 תוספת סביב אימון: לא נספרת ביעדים היומיים"
+EXTRAS_TODAY_TITLE = "💪 מחוץ לספירה היומית:"
+WEEK_SO_FAR = "השבוע (ראשון עד שבת):"
+WEEKLY_LIMIT_EXCEEDED = "⚠️ מעבר למגבלה השבועית"
+
 NOTHING_LOGGED_TODAY = "עדיין לא נרשמו ארוחות היום."
 NOTHING_LOGGED_WEEK = "לא נרשמו ארוחות בשבעת הימים האחרונים, אז אין עדיין מה לסכם."
 CLAUDE_NOTE_UNAVAILABLE = "(לא הצלחתי לנסח תובנות כרגע, אבל המספרים למעלה מדויקים.)"
@@ -98,7 +103,7 @@ def fmt_num(value: float) -> str:
 def fmt_qty(value: float, category: Category) -> str:
     """'1 מנה' / '2.5 מנות'."""
     unit = category.unit_singular if round(value, 2) == 1 else category.unit
-    return f"{fmt_num(value)} {unit}"
+    return f"{fmt_num(value)} {unit}".strip()
 
 
 def fmt_day(day: date) -> str:
@@ -156,6 +161,8 @@ def format_meal(meal: ParsedMeal, menu: Menu, *, show_confidence: bool = True) -
         lines.append(f"📝 {meal.notes}")
     if unsure:
         lines.append("❓ = לא בטוח בהערכה, כדאי לבדוק")
+    if menu.is_extra_meal(meal.meal_type):
+        lines.append(EXTRA_MEAL_NOTE)
     return "\n".join(lines)
 
 

@@ -70,8 +70,8 @@ async def test_system_prompt_holds_the_menu_and_is_cacheable(menu):
 
     (system,) = create.call_args.kwargs["system"]
     assert menu.text in system["text"]
-    assert "carbs: פחמימות (daily target 6 מנות)" in system["text"]
-    assert "vegetables: ירקות (no daily target)" in system["text"]
+    assert "carbs: פחמימות (daily target 6)" in system["text"]
+    assert "vegetables: ירקות (tracked, no target)" in system["text"]
     assert system["cache_control"] == {"type": "ephemeral"}
     # Volatile context must stay out of the cached prefix.
     assert "CTX" not in system["text"]
@@ -229,3 +229,26 @@ async def test_empty_summary_note_raises(menu):
     client, _ = make_client(menu, fake_response())
     with pytest.raises(ClaudeError):
         await client.phrase_daily({"categories": []})
+
+
+async def test_real_plan_prompt_states_targets_rules_and_extras(plan_menu):
+    system = prompts.router_system_prompt(plan_menu)
+
+    assert plan_menu.text in system
+    assert "- carbs: פחמימות (daily target 3 to 5)" in system
+    assert "- protein: חלבון (daily target 3)" in system
+    assert "- vegetables: ירקות (at least 3 a day)" in system
+    assert "- snack: ביניים (at most 2 a day)" in system
+    assert "- pizza: פיצה (at most 1 per week (Sunday to Saturday))" in system
+    assert "- pre_workout: לפני אימון (extra: logged, but the bot keeps it out of the daily totals)" in system
+    assert "# Counting rules for this plan" in system
+    assert "כף הגשה גדושה" in system
+
+    log_tool = prompts.router_tools(plan_menu)[0]
+    item = log_tool["input_schema"]["properties"]["items"]["items"]
+    assert item["properties"]["category"]["enum"] == plan_menu.category_keys
+    assert "pre_workout" in log_tool["input_schema"]["properties"]["meal_type"]["enum"]
+
+
+async def test_prompt_without_counting_rules_has_no_empty_section(menu):
+    assert "Counting rules" not in prompts.router_system_prompt(menu)

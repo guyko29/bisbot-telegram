@@ -140,7 +140,7 @@ class BotHandlers:
             return
         logger.info("Undid meal %s", last.id)
         parts = [texts.UNDO_DONE, texts.format_meal(last.meal, self.menu, show_confidence=False)]
-        balance = self.reports.balance_line(self.now().date())
+        balance = self.reports.after_save_text(self.now())
         if balance:
             parts.append(balance)
         await self._send(context, chat_id, "\n\n".join(parts))
@@ -323,7 +323,7 @@ class BotHandlers:
 
         await query.answer(texts.SAVED)
         parts = [texts.format_meal(meal, self.menu, show_confidence=False), texts.SAVED]
-        balance = self.reports.balance_line(now.date())
+        balance = self.reports.after_save_text(now, meal)
         if balance:
             parts.append(balance)
         await self._edit(query, "\n\n".join(parts))
@@ -444,7 +444,7 @@ class BotHandlers:
             texts.shortcut_logged(name),
             texts.format_meal(meal, self.menu, show_confidence=False),
         ]
-        balance = self.reports.balance_line(now.date())
+        balance = self.reports.after_save_text(now, meal)
         if balance:
             parts.append(balance)
         await self._send(context, chat_id, "\n\n".join(parts))

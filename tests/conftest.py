@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock
@@ -18,7 +19,7 @@ from bisbot.app import build_application
 from bisbot.claude_client import RouterResult
 from bisbot.config import Settings
 from bisbot.db import Database
-from bisbot.menu import Category, Menu
+from bisbot.menu import Category, Menu, load_menu
 from bisbot.models import MealItem, ParsedMeal
 
 TZ = ZoneInfo("Asia/Jerusalem")
@@ -33,12 +34,21 @@ def menu() -> Menu:
     return Menu(
         text="# Test plan\ncarbs 6, protein 5, fat 3 per day. Vegetables are free.",
         categories=(
-            Category("carbs", "פחמימות", daily_target=6),
-            Category("protein", "חלבון", daily_target=5),
-            Category("fat", "שומן", daily_target=3),
-            Category("vegetables", "ירקות", daily_target=None),
+            Category("carbs", "פחמימות", daily_min=6, daily_max=6),
+            Category("protein", "חלבון", daily_min=5, daily_max=5),
+            Category("fat", "שומן", daily_min=3, daily_max=3),
+            Category("vegetables", "ירקות"),
         ),
     )
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+@pytest.fixture
+def plan_menu() -> Menu:
+    """The real plan shipped in the repository (menu.md + menu_targets.json)."""
+    return load_menu(REPO_ROOT / "menu.md", REPO_ROOT / "menu_targets.json")
 
 
 @pytest.fixture

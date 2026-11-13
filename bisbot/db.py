@@ -13,7 +13,7 @@ import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from .models import MealItem, ParsedMeal, StoredMeal
 
@@ -131,17 +131,24 @@ class Database:
         ).fetchall()
         return [self._to_stored(row) for row in rows]
 
-    def totals_for_day(self, day: str) -> dict[str, float]:
-        return self.totals_by_day(day, day).get(day, {})
+    def totals_for_day(self, day: str, exclude_meal_types: Sequence[str] = ()) -> dict[str, float]:
+        return self.totals_by_day(day, day, exclude_meal_types).get(day, {})
 
-    def totals_by_day(self, start_day: str, end_day: str) -> dict[str, dict[str, float]]:
-        """{day: {category: portions}} for days that have at least one meal."""
+    def totals_by_day(
+        self, start_day: str, end_day: str, exclude_meal_types: Sequence[str] = ()
+    ) -> dict[str, dict[str, float]]:
+        """{day: {category: portions}} for days that have at least one counted meal.
+
+        Meals whose type is in ``exclude_meal_types`` are left out of the sums.
+        """
+        placeholders = ", ".join("?" for _ in exclude_meal_types)
+        exclude = f" AND m.meal_type NOT IN ({placeholders})" if exclude_meal_types else ""
         rows = self._conn.execute(
             "SELECT m.day AS day, i.category AS category, SUM(i.portions) AS portions"
             " FROM items i JOIN meals m ON m.id = i.meal_id"
-            " WHERE m.status = ? AND m.day BETWEEN ? AND ?"
+            f" WHERE m.status = ? AND m.day BETWEEN ? AND ?{exclude}"
             " GROUP BY m.day, i.category",
-            (CONFIRMED, start_day, end_day),
+            (CONFIRMED, start_day, end_day, *exclude_meal_types),
         ).fetchall()
         totals: dict[str, dict[str, float]] = {}
         for row in rows:

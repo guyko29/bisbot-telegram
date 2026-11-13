@@ -1,20 +1,34 @@
 {
-  "placeholder": true,
   "categories": [
-    {"key": "carbs", "name": "פחמימות", "unit": "מנות", "unit_singular": "מנה", "daily_target": 6},
-    {"key": "protein", "name": "חלבון", "unit": "מנות", "unit_singular": "מנה", "daily_target": 5},
-    {"key": "fat", "name": "שומן", "unit": "מנות", "unit_singular": "מנה", "daily_target": 3},
-    {"key": "fruit", "name": "פירות", "unit": "מנות", "unit_singular": "מנה", "daily_target": 2},
-    {"key": "vegetables", "name": "ירקות", "unit": "מנות", "unit_singular": "מנה", "daily_target": null},
-    {"key": "extras", "name": "חריגות", "unit": "מנות", "unit_singular": "מנה", "daily_target": null}
+    {"key": "carbs", "name": "פחמימות", "daily_min": 3, "daily_max": 5},
+    {"key": "protein", "name": "חלבון", "daily_target": 3},
+    {"key": "vegetables", "name": "ירקות", "daily_min": 3},
+    {"key": "snack", "name": "ביניים", "unit": "", "unit_singular": "", "daily_max": 2},
+    {"key": "pizza", "name": "פיצה", "unit": "", "unit_singular": "", "weekly_limit": 1},
+    {"key": "sushi", "name": "סושי", "unit": "", "unit_singular": "", "weekly_limit": 1},
+    {"key": "golan_dessert", "name": "מעדן הגולן", "unit": "", "unit_singular": "", "weekly_limit": 2},
+    {"key": "alcohol", "name": "אלכוהול", "weekly_limit": 2},
+    {"key": "off_plan", "name": "מחוץ לתפריט", "unit": "", "unit_singular": ""}
   ],
   "meal_types": [
     {"key": "breakfast", "name": "ארוחת בוקר"},
-    {"key": "snack", "name": "ארוחת ביניים"},
+    {"key": "snack", "name": "ביניים"},
     {"key": "lunch", "name": "ארוחת צהריים"},
     {"key": "dinner", "name": "ארוחת ערב"},
-    {"key": "pre_workout", "name": "לפני אימון"},
-    {"key": "post_workout", "name": "אחרי אימון"},
+    {"key": "pre_workout", "name": "לפני אימון", "extra": true},
+    {"key": "sport_extra", "name": "תוספת ספורט", "extra": true},
     {"key": "other", "name": "אחר"}
+  ],
+  "counting_rules": [
+    "The plan has no daily totals of its own. The daily targets are the sum of its meals: 1-2 carbs at breakfast, 1 at lunch and 1-2 at dinner (3 to 5 a day); one protein portion at each main meal (3 a day); vegetables at every main meal (at least 3 a day); and up to 2 between-meal snacks.",
+    "carbs - 1 portion is any one of: a slice of bread; one heaped serving spoon (כף הגשה גדושה - the plan's 'כף גדושה' means a serving spoon, not a tablespoon) of a cooked carb side such as rice, pasta, couscous, bulgur, quinoa, majadra, sweet potato, corn, black beans or baked potato; a small ladle of legumes, bulgur or quinoa; half a pita; a third of a laffa; half a bun.",
+    "protein - 1 portion is the protein part the plan prescribes for the meal being eaten, so the amount depends on the meal. Breakfast-style: 2 eggs, 100 g of 5% cheese, 4 tablespoons of white cheese, 2 tablespoons of tuna salad, or 1 tablespoon of cheese with a slice of smoked salmon. Lunch-style: 200 g cooked chicken breast, skinless chicken leg (2 drumsticks), pargit or skinless fish, 4 cooked meatballs, or a 200 g hamburger; in the salad-based lunch, a chicken breast, 2 eggs, 120 g of 5% cheese or lean beef. Scale in proportion: 100 g of chicken at lunch is 0.5, 3 eggs at breakfast is 1.5. A dinner eaten 'like breakfast' uses the breakfast amounts and one eaten 'like lunch' uses the lunch amounts.",
+    "vegetables - one vegetable, or one cup of salad or cooked vegetables, is 1 portion. The plan does not cap vegetables.",
+    "snack - one choice from either of the plan's snack lists is 1 snack: 'a fruit + 5 nuts' together is one snack, and so are a small halva, 2 squares of dark chocolate, a cup of edamame, a scoop of ice cream or a cappuccino (קפה הפוך). Do not also count a listed snack's bread or cheese as carbs or protein. Part of a listed snack (just the fruit) still counts as 1 snack.",
+    "Whole-meal options - when the user has one of the plan's alternative meals as written, it takes that meal's place, so log the components that meal normally has. A lunch alternative (the hamburger plate, shawarma in half a pita or a third of a laffa, the salad-based lunch) is 1 protein + 1 carbs, plus vegetables as eaten. The dinner toast is 1 protein + 2 carbs, plus its vegetables. The yogurt dinner is 1 protein + 1 carbs. What the plan writes into an option (mayonnaise, dates, olives and olive oil in the toast; the 10 fries and the sauce with the hamburger; fruit, pecans and chocolate with the yogurt) is part of it and is not logged separately, unless the user clearly had more than the plan's amount - then log the excess as off_plan.",
+    "Weekly-limited items - the pizza dinner (2 triangles with greens) is 1 pizza, plus 1 protein and 2 carbs for the meal it replaces; the sushi dinner is 1 sushi, plus 1 protein and 2 carbs; a Golan dessert (מעדן הגולן) is 1 golan_dessert and also 1 snack; every alcoholic drink is 1 alcohol.",
+    "Sport nutrition - the pre-workout snack (half to one tortilla with a spread, in the hour before training) is logged with meal_type pre_workout. An energy drink during a workout longer than an hour, and the protein drink on the night before strength training, are logged with meal_type sport_extra. Categorise their items as usual (tortilla and energy drink as carbs, the spread and the protein drink as protein); the bot keeps these two meal types out of the daily totals, as agreed with the user. The balanced meal after training is a regular meal with its regular meal type.",
+    "Not logged - water, soda water, herbal tea, black coffee, and supplements (pomegranate oil, magnesium). If a message reports only these, answer instead of logging.",
+    "off_plan - anything the plan does not include (sweets beyond the listed snacks, sweet drinks and juices, fried or fast food outside the listed alternatives) is logged as off_plan, 1 per serving. More of an in-plan food than the plan allows is not off_plan: log it in its own category (4 slices of bread are 4 carbs, a third snack is a third snack) so the total shows the excess."
   ]
 }

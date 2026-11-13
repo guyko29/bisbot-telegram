@@ -17,26 +17,51 @@ LOG_MEAL_TOOL = "log_meal"
 ANSWER_TOOL = "answer_user"
 
 
+def _target_description(category) -> str:
+    low, high = category.daily_min, category.daily_max
+    if category.weekly_limit is not None:
+        return f"at most {category.weekly_limit:g} per week (Sunday to Saturday)"
+    if low is not None and high is not None:
+        if low == high:
+            return f"daily target {low:g}"
+        return f"daily target {low:g} to {high:g}"
+    if low is not None:
+        return f"at least {low:g} a day"
+    if high is not None:
+        return f"at most {high:g} a day"
+    return "tracked, no target"
+
+
 def _categories_table(menu: Menu) -> str:
-    lines = []
-    for category in menu.categories:
-        if category.daily_target is None:
-            target = "no daily target"
-        else:
-            target = f"daily target {category.daily_target:g} {category.unit}"
-        lines.append(f"- {category.key}: {category.name} ({target})")
-    return "\n".join(lines)
+    return "\n".join(
+        f"- {c.key}: {c.name} ({_target_description(c)})" for c in menu.categories
+    )
 
 
 def _meal_types_table(menu: Menu) -> str:
-    return "\n".join(f"- {m.key}: {m.name}" for m in menu.meal_types)
+    return "\n".join(
+        f"- {m.key}: {m.name}"
+        + (" (extra: logged, but the bot keeps it out of the daily totals)" if m.extra else "")
+        for m in menu.meal_types
+    )
+
+
+def _counting_rules(menu: Menu) -> str:
+    if not menu.counting_rules:
+        return ""
+    return (
+        "\n# Counting rules for this plan\n\n"
+        "The user agreed on these rules for turning the plan into numbers. Where they "
+        "are more specific than the general guidance below, follow them.\n\n"
+        f"{menu.counting_rules}\n"
+    )
 
 
 def router_system_prompt(menu: Menu) -> str:
     return f"""\
 You power BisBot, a private Telegram assistant for one person who follows a meal \
 plan written by their nutritionist. The plan below is the source of truth for \
-portion sizes, exchanges between foods, daily targets and pre-workout guidance.
+what each meal contains, portion sizes, allowed alternatives and sport nutrition.
 
 <menu>
 {menu.text}
@@ -47,7 +72,7 @@ The bot tracks these portion categories. Use the keys exactly as written:
 
 Meal types:
 {_meal_types_table(menu)}
-
+{_counting_rules(menu)}
 # How to respond
 
 Each user turn carries a <context> block (current local time, what was eaten \
@@ -62,8 +87,8 @@ when a message looks like a meal report but you cannot tell what was eaten.
 
 # Logging meals
 
-- Convert what the user ate into portions using the plan's own units and exchange \
-lists. One item per distinct food; split a mixed dish into its components when \
+- Convert what the user ate into portions of the categories above, using the \
+plan's own amounts and alternatives. One item per distinct food; split a mixed dish into its components when \
 they fall into different categories (a tuna sandwich is bread plus tuna).
 - When a food is not in the plan, map it to the closest equivalent there, and say \
 so briefly in `notes`.

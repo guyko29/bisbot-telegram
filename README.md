@@ -21,7 +21,7 @@ your daily targets. All bot messages are in Hebrew.
 
 | Command | What it does |
 |---|---|
-| `/today` | Totals per category against the daily targets, and what is left |
+| `/today` | Totals per category against the daily targets, what is left, and this week's limited items |
 | `/week` | Last 7 complete days: adherence per category, patterns, 1-2 suggestions |
 | `/undo` | Removes the last logged meal |
 | `/save <name>` | Saves the last logged meal as a shortcut |
@@ -45,38 +45,76 @@ You need Python 3.11+ (or Docker), a Telegram bot token and an Anthropic API key
    cp .env.example .env    # then fill in the three required values
    ```
 
-5. **Put in your meal plan** - see the next section.
+5. **Check the meal plan** - `menu.md` and `menu_targets.json` already hold the plan; see the next section for how it is counted.
 
 ### The meal plan: `menu.md` and `menu_targets.json`
 
-> ⚠️ The two files in this repository are a **generic placeholder**, not a real
-> plan. While `"placeholder": true` is set, the bot adds a warning to `/help`,
-> `/today` and the summaries.
-
-- `menu.md` is the nutritionist's plan as written: what counts as one portion in
-  each category, exchange lists, pre-workout guidelines. It is given to Claude
+- `menu.md` is the nutritionist's plan as written. It is given to Claude
   verbatim, so any readable format works.
-- `menu_targets.json` lists the same categories in machine-readable form. Totals
-  and targets are computed from it in Python, never by the model:
+- `menu_targets.json` turns the plan into numbers. Totals and targets are
+  computed from it in Python, never by the model.
 
-  ```json
-  {
-    "categories": [
-      {"key": "carbs", "name": "פחמימות", "unit": "מנות", "unit_singular": "מנה", "daily_target": 6},
-      {"key": "vegetables", "name": "ירקות", "daily_target": null}
-    ]
-  }
-  ```
+The plan is written as meals with options and has no daily totals of its own,
+so the targets are the **sum of its meals**:
 
-  `key` is the stable identifier stored in the database, `name` is what the bot
-  shows, and `daily_target: null` means "track it, but there is no daily target".
-  An optional `meal_types` list overrides the default meal types (breakfast,
-  snack, lunch, dinner, pre/post workout, other).
+| Category | Target | Where it comes from |
+|---|---|---|
+| פחמימות (`carbs`) | 3 to 5 a day | 1-2 at breakfast, 1 at lunch, 1-2 at dinner |
+| חלבון (`protein`) | 3 a day | one protein portion per main meal |
+| ירקות (`vegetables`) | at least 3 a day | vegetables at every main meal, no cap |
+| ביניים (`snack`) | at most 2 a day | the two between-meal slots |
+| פיצה, סושי | at most 1 a week each | "פעם בשבוע" |
+| מעדן הגולן, אלכוהול | at most 2 a week each | "מקסימום פעמיים בשבוע", "עד 2 מנות אלכוהול בשבוע" |
+| מחוץ לתפריט (`off_plan`) | tracked, no target | anything the plan does not include |
 
-Keep the two files in sync: every category in `menu_targets.json` should be
-explained in `menu.md`, since that is where Claude learns what a portion is.
-If you rename or remove a category key later, meals already logged under the
-old key drop out of the totals.
+How food is converted into those numbers is spelled out in the `counting_rules`
+of `menu_targets.json`, which are added to Claude's instructions. In short:
+
+- **Carbs**: one portion is a slice of bread, a heaped *serving* spoon of a
+  cooked side, a small ladle of legumes, half a pita, a third of a laffa or half
+  a bun.
+- **Protein**: one portion is whatever the plan prescribes for that meal - 2 eggs
+  at breakfast, 200 g cooked chicken at lunch - scaled in proportion (100 g of
+  chicken at lunch is 0.5).
+- **Snacks**: one choice from the plan's snack lists is one snack, including the
+  cappuccino. Its bread or cheese is not also counted as carbs or protein.
+- **Whole-meal alternatives** (hamburger plate, shawarma, toast, pizza, sushi,
+  yogurt bowl) take the place of the meal and are logged as that meal's usual
+  protein and carbs.
+- **Sport nutrition**: the pre-workout snack and the other workout extras are
+  logged but stay out of the daily totals. `/today` lists them separately.
+- **Weekly limits** are counted per calendar week, Sunday to Saturday.
+
+To change a target or a rule, edit `menu_targets.json` and restart the bot:
+
+```json
+{
+  "categories": [
+    {"key": "carbs", "name": "פחמימות", "daily_min": 3, "daily_max": 5},
+    {"key": "protein", "name": "חלבון", "daily_target": 3},
+    {"key": "vegetables", "name": "ירקות", "daily_min": 3},
+    {"key": "snack", "name": "ביניים", "unit": "", "unit_singular": "", "daily_max": 2},
+    {"key": "pizza", "name": "פיצה", "weekly_limit": 1},
+    {"key": "off_plan", "name": "מחוץ לתפריט"}
+  ],
+  "meal_types": [
+    {"key": "lunch", "name": "ארוחת צהריים"},
+    {"key": "pre_workout", "name": "לפני אימון", "extra": true}
+  ],
+  "counting_rules": ["One paragraph per rule, written for Claude."]
+}
+```
+
+- `key` is the stable identifier stored in the database; `name` is what the bot
+  shows. If you rename or remove a key, meals already logged under the old key
+  drop out of the totals.
+- Daily targets: `daily_target` for an exact number, `daily_min` + `daily_max`
+  for a range, or just one of them for "at least" / "at most". A category with
+  none of these is tracked without a target.
+- `weekly_limit` makes a category a weekly counter instead of a daily one.
+- A meal type with `"extra": true` is logged but excluded from every total.
+- `"placeholder": true` at the top level makes the bot warn that the plan is not
+  the real one (useful while trying the bot with a sample plan).
 
 ## Run locally
 
@@ -194,11 +232,11 @@ travel in the user turn.
 - **Week window**: `/week` and the Friday message cover the seven complete days
   ending yesterday. Today is excluded so a half-logged day does not drag the
   averages down.
-- **Adherence**: per category and day, `100% - |eaten - target| / target`
-  (never below 0), averaged over the days that have at least one logged meal.
-  A day counts as "on target" within half a portion or 10% of the target,
-  whichever is larger. Days with no log at all are reported separately rather
-  than counted as zero.
+- **Adherence**: per category and day, 100% when the amount is inside the target
+  range, dropping linearly to 0% at 100% off the nearest bound; averaged over
+  the days that have at least one logged meal. For an exact target (protein), a
+  day still counts as "on target" within half a portion. Days with no log at all
+  are reported separately rather than counted as zero.
 - **`/undo`** soft-deletes: the row stays in the database with
   `status = 'deleted'` and leaves every total.
 - **Refusal fallback**: requests are sent with `fallbacks: "default"` (beta
